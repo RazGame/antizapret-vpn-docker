@@ -56,6 +56,7 @@ https://t.me/antizapret_support
 - Modular design. External and high quality opensource modules/containers are used as builing blocks of our system. 
 - User friendly web panels for administration of VPN's and DNS.
 - Multiple VPN transports: Wireguard, Amnezia Wireguard, OpenVPN
+- Optional 3X-UI panel for Xray-based transports such as VLESS and Hysteria
 - AdguardHome as main DNS resolver and blocked domains manager
 - Multi-Server Architecture to bypass services geo restrictions. Different domains use different servers as exit nodes.
 - Firewall to protect from port scanning
@@ -166,6 +167,7 @@ If you did not provide domain and email in its env it will generate self-signed 
 - openvpn: https://<your-server-ip>:3443
 - wireguard: https://<your-server-ip>:4443
 - wireguard-amnezia: https://<your-server-ip>:5443
+- 3x-ui: https://<your-server-ip>:6443
 
 
 ### Local network
@@ -176,6 +178,7 @@ If you did not provide domain and email in its env it will generate self-signed 
 - http://wireguard.antizapret:51821
 - http://openvpn-ui.antizapret:8080
 - http://filebrowser.antizapret:80
+- http://xui.antizapret:2053
 
 ### HTTP:
 By default, containers don't expose web panels to internet. All web panels are proxied via `https` container.
@@ -197,8 +200,56 @@ List of default ports:
 - wireguard: http://<your-server-ip>:51821
 - openvpn-ui: http://<your-server-ip>:8080
 - filebrowser: http://<your-server-ip>:80
+- 3x-ui: http://<your-server-ip>:2053
 
 Some containers have same ports. So you need to choose unique external port in docker-compose.override.yml.
+
+## 3X-UI
+
+3X-UI can be enabled as an optional panel for Xray-based transports such as VLESS, Trojan, Shadowsocks and Hysteria.
+
+Add `xui` service to `docker-compose.override.yml`:
+```yml
+  xui:
+    extends:
+      file: services/xui/docker-compose.yml
+      service: xui
+    environment:
+      - XUI_USERNAME=admin
+      - XUI_PASSWORD=strongpassword
+      - XUI_WEBBASEPATH=/
+    ports:
+      # Publish only the ranges you plan to use for inbounds
+      - "10000-10100:10000-10100/tcp"
+      - "10000-10100:10000-10100/udp"
+```
+
+Notes:
+- The 3X-UI web panel itself is proxied through the common `https` container and available at `https://<your-server-ip>:6443`
+- Xray inbounds are dynamic, so Docker ports must be published in advance. Create inbounds only inside the published ranges.
+- The `xui` container now mounts AntiZapret result files and runs its own `routes.sh`, so traffic destined to fake AntiZapret addresses from `14.16.0.0/14` is forwarded inside Docker to `az-local` / `az-world`.
+- Unlike OpenVPN/WireGuard, VLESS/Hysteria are not full VPN tunnels by themselves. Split routing for "only blocked domains" depends on the client configuration, not only on the server.
+
+### 3X-UI and AntiZapret split routing
+
+AntiZapret split tunneling works by returning fake IPs from `14.16.0.0/14` only for domains from the configured lists and routing only that subnet through the tunnel.
+
+For OpenVPN and WireGuard this is handled by the server-generated client config.
+For Xray-based clients managed by 3X-UI, selective routing must be implemented on the client side:
+- use an Xray/Sing-box client that supports rules or TUN mode
+- send DNS for blocked domains through AntiZapret DNS (`14.16.0.1`) or replicate AntiZapret domain lists in client rules
+- route only destinations from AntiZapret lists, or only subnet `14.16.0.0/14`, through the proxy/tunnel
+
+Because client capabilities differ between platforms, this repository currently adds 3X-UI as a server/panel integration only and does not auto-generate universal split-routing profiles for VLESS/Hysteria clients.
+
+Example client template:
+- [docs/sing-box-3xui-split.example.json](d:\Projects\openvpn\antizapret-vpn-docker\docs\sing-box-3xui-split.example.json)
+
+How this template works:
+- client sends DNS through the 3X-UI proxy to AntiZapret DNS `14.16.0.1`
+- AntiZapret DNS returns fake IPs from `14.16.0.0/14` only for blocked domains
+- sing-box routes only `14.16.0.0/14` through `VLESS`
+- all other traffic goes `direct`
 
 ## Update
 

@@ -21,6 +21,7 @@ services:
       - DASHBOARD_SERVICE_3=OpenVPN UI:3443:openvpn-ui.antizapret:8080
       - DASHBOARD_SERVICE_4=WireGuard:4443:wireguard.antizapret:51821
       - DASHBOARD_SERVICE_5=WireGuard Amnezia:5443:wireguard-amnezia.antizapret:51821
+      - DASHBOARD_SERVICE_6=3X-UI:6443:xui.antizapret:2053
     depends_on:
       - az-local
     deploy:

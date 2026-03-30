@@ -1,0 +1,75 @@
+{
+  "log": {
+    "level": "info"
+  },
+  "dns": {
+    "servers": [
+      {
+        "tag": "antizapret-dns",
+        "address": "14.16.0.1",
+        "detour": "proxy"
+      },
+      {
+        "tag": "local-dns",
+        "address": "local"
+      }
+    ],
+    "rules": [
+      {
+        "outbound": "any",
+        "server": "antizapret-dns"
+      }
+    ],
+    "final": "local-dns"
+  },
+  "inbounds": [
+    {
+      "type": "tun",
+      "tag": "tun-in",
+      "interface_name": "singtun0",
+      "address": [
+        "172.19.0.1/30"
+      ],
+      "auto_route": true,
+      "strict_route": true,
+      "sniff": true
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "vless",
+      "tag": "proxy",
+      "server": "YOUR_SERVER_IP",
+      "server_port": 10001,
+      "uuid": "YOUR_UUID",
+      "flow": "",
+      "tls": {
+        "enabled": false
+      }
+    },
+    {
+      "type": "direct",
+      "tag": "direct"
+    },
+    {
+      "type": "block",
+      "tag": "block"
+    }
+  ],
+  "route": {
+    "auto_detect_interface": true,
+    "rules": [
+      {
+        "protocol": "dns",
+        "outbound": "proxy"
+      },
+      {
+        "ip_cidr": [
+          "14.16.0.0/14"
+        ],
+        "outbound": "proxy"
+      }
+    ],
+    "final": "direct"
+  }
+}
