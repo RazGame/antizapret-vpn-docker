@@ -1,0 +1,41 @@
+services:
+  xui:
+    hostname: xui.antizapret
+    restart: unless-stopped
+    image: xtrime/antizapret-vpn-xui:0.1.0
+    build:
+      context: ../../
+      dockerfile: antizapret-vpn-docker/services/xui/Dockerfile
+      x-bake:
+        platforms:
+          - linux/amd64
+          - linux/arm64
+    init: true
+    expose:
+      - "2053"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - $PWD/config/xui/db:/etc/x-ui
+      - $PWD/config/xui/cert:/root/cert
+      - $PWD/config/antizapret/result:/opt/antizapret/result
+    environment:
+      - XUI_PORT=2053
+      - XUI_USERNAME=admin
+      - XUI_PASSWORD=admin
+      - XUI_WEBBASEPATH=/
+      - XUI_LISTEN_IP=
+      - XUI_LOG_LEVEL=info
+      - XUI_ENABLE_FAIL2BAN=false
+      - |
+        ROUTES=
+        adguard:14.16.0.1;
+        az-local:14.16.0.0/15;
+        az-world:14.18.0.0/15;
+    depends_on:
+      - az-local
+    deploy:
+      mode: replicated
+      replicas: 1
+      endpoint_mode: dnsrr
+      placement:
+        constraints: [ node.labels.location == local ]

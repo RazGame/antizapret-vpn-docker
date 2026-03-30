@@ -60,6 +60,19 @@ services:
     environment:
       - WIREGUARD_PASSWORD=strongpassword
 
+  xui:
+    extends:
+      file: services/xui/docker-compose.yml
+      service: xui
+    environment:
+      - XUI_USERNAME=admin
+      - XUI_PASSWORD=strongpassword
+      - XUI_WEBBASEPATH=/
+    ports:
+      # Publish only the port ranges you plan to use for VLESS / Hysteria / etc.
+      - "10000-10100:10000-10100/tcp"
+      - "10000-10100:10000-10100/udp"
+
   socks-local:
     hostname: socks-local.antizapret
     extends:
