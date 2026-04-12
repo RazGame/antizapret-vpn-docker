@@ -1,12 +1,16 @@
 --- ./openvpn/socket.h	2025-01-12 22:59:54
 +++ ./openvpn/socket.h	2025-02-02 11:19:46
-@@ -693,15 +693,87 @@
+@@ -693,15 +693,91 @@
  #endif /* ifdef _WIN32 */
  
- static inline ssize_t
-+
 +/* Patch to overcome DPI start (works only for UDP connections, taken from https://github.com/GubernievS/AntiZapret-VPN/blob/main/setup/root/patch-openvpn.sh */
 +#include <stdlib.h> // For getenv
++#include <time.h> // For time
++#ifndef _WIN32
++#include <unistd.h> // For usleep
++#endif
++
+ static inline ssize_t
  link_socket_write_udp(struct link_socket *sock, struct buffer *buf, struct link_socket_actual *to)
  {
 +    const int OBFUSCATE = getenv("OBFUSCATE_TYPE") ? strtol(getenv("OBFUSCATE_TYPE"), NULL, 10) : 0;
@@ -23,7 +27,7 @@
 +
 +    uint16_t buffer_sent = 0;
 +    uint8_t opcode = *BPTR(buf) >> 3;
-+    if (opcode == 7 || opcode == 8 || opcode == 10)
++    if (opcode == 7 || opcode == 8 || opcode == 10 || opcode == 11)
 +    {
 +        if (OBFUSCATE == 2) {
 +#ifdef _WIN32
